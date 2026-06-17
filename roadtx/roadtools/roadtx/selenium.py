@@ -564,12 +564,15 @@ class SeleniumAuthentication():
         return self.selenium_login(url, identity, password, otpseed, keep=keep, capture=capture)
 
     @selenium_wrap
-    def selenium_enrich_prt(self, url, otpseed=None):
+    def selenium_enrich_prt(self, url, otpseed=None, estscookie=None):
         '''
         Selenium authentication to add NGC MFA claim to a PRT or token.
         Single factor auth is handled via PRT injection, MFA seed can come
         from keepass or manually. Result is refresh token that can be used to request
         a new PRT, or an access token to the desired resource (depends on supplied url).
+        If an ESTSAUTHPERSISTENT cookie is supplied, it is injected as well. When that
+        session was authenticated with a phishing-resistant method (FIDO) it can satisfy
+        the ngcmfa challenge without any interaction.
         '''
         def interceptor(request):
             del request.headers['User-Agent']
@@ -581,6 +584,10 @@ class SeleniumAuthentication():
                 request.headers['Sec-Ch-Ua-Mobile'] =  '?0'
                 request.headers['Sec-Ch-Ua-Platform'] =  '"Windows"'
                 request.headers['Sec-Ch-Ua-Platform-Version'] = '"10.0.0"'
+
+            if estscookie and request.url.startswith('https://login.microsoftonline.com'):
+                existing = request.headers['Cookie'] if request.headers['Cookie'] else ''
+                request.headers['Cookie'] = f'ESTSAUTHPERSISTENT={estscookie}; ' + existing
 
             if request.url.startswith('https://login.microsoftonline.com') and self.deviceauth.prt:
                 if '/authorize' in request.url or '/login' in request.url or '/kmsi' in request.url or '/reprocess' in request.url or '/resume' in request.url:

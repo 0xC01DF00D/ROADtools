@@ -1088,6 +1088,9 @@ def main():
     enrauth_parser.add_argument('--otpseed',
                                 action='store',
                                 help='TOTP seed to calculate MFA code when prompted')
+    enrauth_parser.add_argument('--estscookie',
+                                action='store',
+                                help='ESTSAUTHPERSISTENT cookie from an authenticated browser session. A FIDO/phishing-resistant session can satisfy the ngcmfa challenge without interaction.')
 
     # CLI authentication with device code flow
     cliauth_parser = subparsers.add_parser('clicodeauth', help='Manual interactive authentication with external browser')
@@ -2274,7 +2277,7 @@ def main():
         if not service:
             return
         selauth.driver = selauth.get_webdriver(service, intercept=True)
-        tokenreply = selauth.selenium_enrich_prt(url, otpseed=otpseed)
+        tokenreply = selauth.selenium_enrich_prt(url, otpseed=otpseed, estscookie=args.estscookie)
         # Save tokens
         if args.ngcmfa_drs_auth:
             auth.tokendata = auth.tokenreply_to_tokendata(tokenreply)
